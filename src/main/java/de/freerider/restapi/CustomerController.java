@@ -1,10 +1,7 @@
 package de.freerider.restapi;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.servlet.http.HttpServletRequest;
@@ -237,7 +234,26 @@ class CustomerController implements CustomersAPI {
 
     @Override
     public ResponseEntity<List<?>> putCustomers(Map<String, Object>[] jsonMap) {
-        return null;
+        List<Customer> cList = new ArrayList<Customer>();
+        for (Map<String, Object> kvpairs_new : jsonMap) {
+            for (String key : kvpairs_new.keySet()) {
+                Optional<Customer> c = accept(kvpairs_new);
+                if (c.isPresent()) {
+                    Customer new_customer = c.get();
+                    Optional<Customer> old_customer = repo.findById(new_customer.getId());
+                    if(old_customer.isPresent()) {
+                        Customer old_cus = old_customer.get();
+                        old_cus.setName(new_customer.getName());
+                        StringBuffer sb = new StringBuffer();
+                        new_customer.getContacts().forEach(contact -> sb.append(sb.length() == 0 ? "" : "; ").append(contact));
+                        old_cus.addContact(sb.toString());
+                        repo.save(old_cus);
+                        return new ResponseEntity<>(null, HttpStatus.OK);
+                    }
+                }
+            }
+        }
+        return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
     }
 
     //
